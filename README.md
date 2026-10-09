@@ -4,6 +4,10 @@
 apps and the Brave browser. Set up with one command and restored on every
 login.**
 
+![The same web page in Brave before and after: Times New Roman look-alike text and DejaVu code font become Adwaita Sans and JetBrains Mono](docs/before-after.png)
+
+<sub>Real screenshots of Brave (Flatpak) on Fedora, nothing edited. · **Website:** https://arvindautar.github.io/font-settings/</sub>
+
 ### Fixes problems like
 
 - Fonts look blurry or thin in Flatpak apps (Firefox, Brave, Chromium) on Linux
