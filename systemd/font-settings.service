@@ -1,0 +1,10 @@
+[Unit]
+Description=Apply font settings (GNOME, fontconfig, Flatpak, Brave)
+After=dconf.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/share/font-settings/apply.sh
+
+[Install]
+WantedBy=default.target
