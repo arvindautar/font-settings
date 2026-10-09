@@ -1,63 +1,106 @@
 # font-settings
 
-Consistent, sharp font rendering on GNOME (Fedora / Bluefin) across GTK apps,
-Flatpak apps and Brave, applied with one command and re-applied at every login.
+**Sharp, consistent fonts everywhere on a GNOME desktop: GNOME apps, Flatpak
+apps and the Brave browser. Set up with one command and restored on every
+login.**
 
-Fonts: **Adwaita Sans** (UI, sans-serif), **JetBrains Mono** (monospace),
-**Noto Serif** (serif).
+## What it does
+
+Out of the box on Fedora / Bluefin, fonts look different from app to app:
+
+- GNOME apps follow your font settings, but **Flatpak apps** (Firefox, Brave,
+  and so on) run in a sandbox and ignore them. They fall back to other fonts
+  and blurrier rendering.
+- **Brave** ignores the system font settings for websites and uses its own
+  defaults (Times New Roman and Arial). So most web pages show up in
+  Liberation fonts instead of your desktop font.
+
+This repo fixes both. It gives every app the same fonts:
+
+| Used for | Font |
+|---|---|
+| Interface and regular text | **Adwaita Sans** |
+| Code and terminals | **JetBrains Mono** |
+| Serif text | **Noto Serif** |
+
+It also sets the same rendering everywhere: smooth edges, light hinting and
+RGB subpixel rendering for LCD screens. On top of that, letters are drawn
+slightly heavier so small text is easier to read.
+
+**Automatic restore:** after installing, a small background service applies
+the settings again every time you log in. If GNOME resets your settings, or you
+reinstall Brave, the fonts come back on the next login.
 
 ## Install
 
+1. **Close Brave.** Brave overwrites its settings file when it exits, so the
+   installer skips Brave while it's running. If you forget, the next login
+   will catch it.
+
+2. **Download and install:**
+
+   ```bash
+   git clone https://github.com/arvindautar/font-settings.git ~/font-settings
+   cd ~/font-settings
+   ./install.sh
+   ```
+
+3. **Log out and log back in** so every app picks up the new settings.
+
+That's it. To check: open `brave://settings/fonts` in Brave. It should show
+Adwaita Sans, Noto Serif and JetBrains Mono.
+
+## Change a setting
+
+All choices live in **`settings.env`**: fonts, sizes, smoothing, text scaling
+and Brave's fonts. Edit that file, then run the installer again:
+
 ```bash
-git clone <this repo> ~/font-settings
 cd ~/font-settings
+nano settings.env      # or any editor
 ./install.sh
 ```
 
-Then log out and back in once. Close Brave before installing, or let the login
-service pick it up next time you log in.
-
-`install.sh` copies everything to `~/.local/share/font-settings` and enables a
-systemd user service, `font-settings.service`, that runs `apply.sh` at every
-login. If GNOME settings get reset or Brave is reinstalled, the settings come
-back on the next login without doing anything.
-
-To change a value, edit `settings.env` and run `./install.sh` again.
-
-## What it sets
-
-| Layer | Where | What |
-|---|---|---|
-| fontconfig | `~/.config/fontconfig/fonts.conf` | Antialiasing, slight hinting, RGB subpixel, LCD filter; `sans-serif`/`system-ui` → Adwaita Sans, `monospace` → JetBrains Mono, `serif` → Noto Serif |
-| FreeType | `~/.config/environment.d/fonts.conf` | Stem darkening (slightly heavier text) for GTK and Firefox. Brave bundles its own FreeType and ignores it. |
-| Flatpak | `flatpak override --user` | Gives all Flatpak apps read-only access to `~/.config/fontconfig` |
-| GNOME | `org.gnome.desktop.interface` | UI, document and monospace fonts, antialiasing, hinting, subpixel order, text scaling |
-| Brave | `Preferences` of each profile (Flatpak and native) | Standard, sans-serif, serif and fixed-width fonts |
-
-### Why Brave needs its own step
-
-Chromium-based browsers don't take the generic web fonts (`sans-serif`,
-`serif`, `monospace`, and the default for pages that set no font) from
-fontconfig. They come from the browser's font settings, which default to Times
-New Roman and Arial. Chromium also ignores fontconfig substitutions for named
-fonts unless the replacement is metric-compatible, like Arial → Liberation Sans.
-So `apply.sh` writes the fonts straight into Brave's `Preferences`, which is
-the same as setting them in `brave://settings/fonts`. That step is skipped
-while Brave is running, because Brave would overwrite the file on exit.
+For example, set `GNOME_TEXT_SCALING_FACTOR="1.25"` for 25% larger text, which
+helps on dense laptop screens.
 
 ## Uninstall
 
 ```bash
+cd ~/font-settings
 ./uninstall.sh
 ```
 
-This removes the login service, restores any config files that existed before
-the first install (saved as `*.font-settings.orig`) or deletes them, removes
-the Flatpak override, resets the GNOME font keys to their defaults and clears
-Brave's custom fonts.
+This switches off the login service and puts everything back to the defaults.
+Close Brave first so its fonts can be reset too.
+
+## What gets changed (details)
+
+| Part | Where | What |
+|---|---|---|
+| Font matching and rendering | `~/.config/fontconfig/fonts.conf` | Smoothing, hinting and subpixel settings; maps the generic `sans-serif`, `system-ui`, `monospace` and `serif` names to the fonts above |
+| Heavier text | `~/.config/environment.d/fonts.conf` | FreeType "stem darkening". Affects GNOME apps and Firefox. Brave uses its own renderer and ignores it. |
+| Flatpak apps | `flatpak override --user` | Lets all Flatpak apps read your font settings (read-only) |
+| GNOME | Settings → Appearance / Accessibility | Interface, document and monospace fonts, smoothing, hinting and text size |
+| Brave (Flatpak or regular install) | Each profile's `Preferences` file | Same as setting the fonts in `brave://settings/fonts` |
+| Login service | `~/.config/systemd/user/font-settings.service` | Runs the settings again at every login, from a copy in `~/.local/share/font-settings` |
+
+The first time a config file is replaced, the old version is saved next to it
+as `*.font-settings.orig`. Uninstalling puts it back.
+
+### Why Brave needs its own step
+
+Chromium-based browsers take the default web fonts (`sans-serif`, `serif`,
+`monospace`, and the font for pages that don't set one) from their own
+settings, not from the system. They also ignore system font substitutions
+unless the replacement has the same letter widths, like Arial → Liberation
+Sans. The only reliable fix is to write the fonts straight into Brave's
+settings, which is what the installer does.
 
 ## Requirements
 
-GNOME, `bash`, `python3`, `systemd --user`. Flatpak and Brave are optional.
-The fonts themselves (Adwaita Sans, JetBrains Mono, Noto Serif) ship with
-Bluefin. On other distros, install them first.
+- GNOME with `systemd` (Fedora, Bluefin, Silverblue and similar)
+- `bash` and `python3`
+- Fonts: Adwaita Sans, JetBrains Mono and Noto Serif. All three come with
+  Bluefin; on other systems, install them first.
+- Flatpak and Brave are optional. Those steps are skipped if they're missing.
