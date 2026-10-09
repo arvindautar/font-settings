@@ -4,6 +4,17 @@
 apps and the Brave browser. Set up with one command and restored on every
 login.**
 
+### Fixes problems like
+
+- Fonts look blurry or thin in Flatpak apps (Firefox, Brave, Chromium) on Linux
+- Flatpak apps ignore `~/.config/fontconfig/fonts.conf`
+- Brave or Chromium show websites in Times New Roman, Liberation Sans or
+  DejaVu instead of your system font
+- Brave ignores fontconfig aliases and substitutions
+- Code blocks in Brave not using your monospace font
+- Fonts look different in GNOME apps than in browsers on Fedora, Bluefin or
+  Silverblue
+
 ## What it does
 
 Out of the box on Fedora / Bluefin, fonts look different from app to app:
@@ -104,3 +115,7 @@ settings, which is what the installer does.
 - Fonts: Adwaita Sans, JetBrains Mono and Noto Serif. All three come with
   Bluefin; on other systems, install them first.
 - Flatpak and Brave are optional. Those steps are skipped if they're missing.
+
+## License
+
+[MIT](LICENSE)
